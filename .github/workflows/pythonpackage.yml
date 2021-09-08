@@ -4,79 +4,89 @@ on: [push]
 
 jobs:
   lint:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Check with Python Black
-      uses: psf/black@stable
-
-
-  test:
-
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest]
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Check with Python Black
+        uses: psf/black@stable
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Install gcc
-      run: |
-        sudo apt-get update
-        sudo apt-get install -yq gcc
-        sudo apt-get install -yq gfortran
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install kim-api
-      run: |
-        export KIMAPI_DIR=${PWD}
-        export KIM_API_VERSION="2.2.1"
-        cd $KIMAPI_DIR && cd ..
-        wget http://s3.openkim.org/kim-api/kim-api-$KIM_API_VERSION.txz
-        tar Jxvf kim-api-$KIM_API_VERSION.txz
-        cd kim-api-$KIM_API_VERSION
-        mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        make -j2
-        sudo make install
-        sudo ldconfig
+      - name: Install gcc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -yq gcc
+          sudo apt-get install -yq gfortran
 
-        # install SW driver and model
-        cd $KIMAPI_DIR
-        kim-api-collections-management install user SW_StillingerWeber_1985_Si__MO_405512056662_006
+      - name: Install kim-api
+        shell: bash -l {0}
+        run: |
+          export KIMAPI_DIR=${PWD}
+          export KIM_API_VERSION="2.2.1"
+          cd $KIMAPI_DIR && cd ..
+          wget http://s3.openkim.org/kim-api/kim-api-$KIM_API_VERSION.txz
+          tar Jxvf kim-api-$KIM_API_VERSION.txz
+          cd kim-api-$KIM_API_VERSION
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j2
+          sudo make install
+          sudo ldconfig
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
+          # install SW driver and model
+          cd $KIMAPI_DIR
+          kim-api-collections-management install user SW_StillingerWeber_1985_Si__MO_405512056662_006
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install kimpy
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest kimpy
 
-    - name: Install
-      run: |
-        python -m pip install .
+      - name: Install
+        shell: bash -l {0}
+        run: |
+          python -m pip install .
 
-    - name: Test with pytest
-      run: |
-        cd tests
-        pytest
+      - name: Test with pytest
+        shell: bash -l {0}
+        run: |
+          cd tests
+          pytest
