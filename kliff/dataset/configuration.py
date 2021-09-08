@@ -4,7 +4,6 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 from kliff.dataset.extxyz import read_extxyz, write_extxyz
 from kliff.utils import to_path
-from pymatgen.core.structure import Structure
 
 # map from file_format to file extension
 SUPPORTED_FORMAT = {"xyz": ".xyz"}
@@ -65,21 +64,6 @@ class Configuration:
         self._kwargs = kwargs
         for key, value in kwargs.items():
             self[key] = value
-
-    @classmethod
-    def from_pymatgen_structure(cls, struct: Structure):
-        """
-        Create a configuration from pymatgen structure.
-
-        Args:
-            struct: pymatgen `Structure`
-        """
-        cell = struct.lattice
-        species = struct.species
-        coords = struct.cart_coords
-        PBC = [True, True, True]
-
-        return cls(species, coords, cell=cell, PBC=PBC)
 
     # TODO enable config weight read in from file
     @classmethod
