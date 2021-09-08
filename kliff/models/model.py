@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, TextIO, Tuple, Union
 
 import numpy as np
-from kliff.dataset.dataset import Configuration
+from kliff.dataset.configuration import Configuration
 from kliff.models.parameter import OptimizingParameters, Parameter
 from kliff.utils import yaml_dump, yaml_load
 

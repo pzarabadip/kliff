@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import numpy as np
-from kliff.dataset.dataset import Configuration
+from kliff.dataset.configuration import Configuration
 from kliff.error import report_import_error
 from kliff.log import get_log_level
 from kliff.models.model import ComputeArguments, Model

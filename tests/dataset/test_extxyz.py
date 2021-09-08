@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import numpy as np
-from kliff.dataset.dataset import Configuration, Dataset
+from kliff.dataset.configuration import Configuration
+from kliff.dataset import Dataset
 
 
 def test_configuration(e=True, f=False, s=False, order=False):

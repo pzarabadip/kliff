@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import numpy as np
-from kliff.dataset.dataset import Configuration
+from kliff.dataset.configuration import Configuration
 from kliff.neighbor import NeighborList
 
 target_coords = np.asarray(

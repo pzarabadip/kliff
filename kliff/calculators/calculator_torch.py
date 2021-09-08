@@ -4,8 +4,8 @@ from typing import Dict, List, Optional, Union
 
 import torch
 import torch.distributed as dist
-from kliff.dataset.dataset import Configuration
-from kliff.dataset.dataset_torch import FingerprintsDataset, fingerprints_collate_fn
+from kliff.dataset.configuration import Configuration
+from kliff.dataset.dataset import FingerprintsDataset, fingerprints_collate_fn
 from kliff.models.model_torch import ModelTorch
 from kliff.models.neural_network import NeuralNetwork
 from kliff.utils import to_path
