@@ -105,6 +105,7 @@ setup(
         "pybind11",
         "scipy",
         "pyyaml",
+        "pymatgen",
         "monty",
         "loguru",
     ],

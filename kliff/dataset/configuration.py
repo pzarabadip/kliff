@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 from kliff.dataset.extxyz import read_extxyz, write_extxyz
 from kliff.utils import to_path
+from pymatgen.core.structure import Structure
 
 # map from file_format to file extension
 SUPPORTED_FORMAT = {"xyz": ".xyz"}
@@ -11,52 +12,74 @@ SUPPORTED_FORMAT = {"xyz": ".xyz"}
 
 class Configuration:
     r"""
-    Class of atomic configuration.
+    Base class of an atomic configuration (for both crystals and molecules).
 
-    This is used to store the information of an atomic configuration, e.g. supercell,
-    species, coords, energy, and forces.
+    This is used to store the information of an atomic configuration, e.g. super cell,
+    species, coords, energy, forces...
 
     Args:
-        cell: A 3x3 matrix of the lattice vectors. The first, second, and third rows are
-            :math:`a_1`, :math:`a_2`, and :math:`a_3`, respectively.
         species: A list of N strings giving the species of the atoms, where N is the
             number of atoms.
         coords: A Nx3 matrix of the coordinates of the atoms, where N is the number of
             atoms.
-        PBC: A list with 3 components indicating whether periodic boundary condition
-            is used along the directions of the first, second, and third lattice vectors.
         energy: energy of the configuration.
         forces: A Nx3 matrix of the forces on atoms, where N is the number of atoms.
         stress: A list with 6 components in Voigt notation, i.e. it returns
             :math:`\sigma=[\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{yz},\sigma_{xz},
             \sigma_{xy}]`. See: https://en.wikipedia.org/wiki/Voigt_notation
+        cell: A 3x3 matrix of the lattice vectors. The first, second, and third rows are
+            :math:`a_1`, :math:`a_2`, and :math:`a_3`, respectively.
+        PBC: A list with 3 components indicating whether periodic boundary condition
+            is used along the directions of the first, second, and third lattice vectors.
         weight: weight of the configuration in the loss function.
         identifier: a (unique) identifier of the configuration
-
+        kwargs: extra property of a configuration (e.g. charge of each atom). The
+            property can be accessed as an attribute.
     """
 
     def __init__(
         self,
-        cell: np.ndarray,
         species: List[str],
         coords: np.ndarray,
-        PBC: List[bool],
+        *,
         energy: float = None,
         forces: Optional[np.ndarray] = None,
         stress: Optional[List[float]] = None,
+        cell: Optional[np.ndarray] = None,
+        PBC: Optional[List[bool]] = None,
         weight: float = 1.0,
-        identifier: Optional[Union[str, Path]] = None,
+        identifier: Optional[str] = None,
+        **kwargs,
     ):
-        self._cell = cell
         self._species = species
         self._coords = coords
-        self._PBC = PBC
         self._energy = energy
         self._forces = forces
         self._stress = stress
+        self._cell = cell
+        self._PBC = PBC
         self._weight = weight
         self._identifier = identifier
         self._path = None
+
+        self._kwargs = kwargs
+        for key, value in kwargs.items():
+            self[key] = value
+
+    @classmethod
+    def from_pymatgen_structure(cls, struct: Structure):
+        """
+        Create a configuration from pymatgen structure.
+
+        Args:
+            struct: pymatgen `Structure`
+        """
+        cell = struct.lattice
+        species = struct.species
+        coords = struct.cart_coords
+        PBC = [True, True, True]
+
+        return cls(species, coords, cell=cell, PBC=PBC)
 
     # TODO enable config weight read in from file
     @classmethod
@@ -86,7 +109,14 @@ class Configuration:
         stress = [float(i) for i in stress] if stress is not None else None
 
         self = cls(
-            cell, species, coords, PBC, energy, forces, stress, identifier=str(filename)
+            species,
+            coords,
+            energy=energy,
+            forces=forces,
+            stress=stress,
+            cell=cell,
+            PBC=PBC,
+            identifier=str(filename),
         )
         self._path = to_path(filename)
 
@@ -121,7 +151,7 @@ class Configuration:
     @property
     def cell(self) -> np.ndarray:
         """
-        3x3 matrix of the lattice vectors of the configurations.
+        3x3 matrix of the lattice vectors of the configuration.
         """
         return self._cell
 
@@ -281,6 +311,18 @@ class Configuration:
             )
             self._species = np.asarray(species)
             self._coords = np.asarray(coords)
+
+    def __getitem__(self, key):
+        """
+        Gets the data of the attribute :obj:`key`.
+        """
+        return getattr(self, key, None)
+
+    def __setitem__(self, key, value):
+        """
+        Sets the attribute :obj:`key` to :obj:`value`.
+        """
+        setattr(self, key, value)
 
 
 class ConfigurationError(Exception):
