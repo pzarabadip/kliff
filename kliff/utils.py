@@ -21,15 +21,6 @@ def length_equal(a, b):
         return True
 
 
-def torch_available():
-    try:
-        import torch
-
-        return True
-    except ImportError:
-        return False
-
-
 def split_string(string: str, length=80, starter: str = None):
     r"""
     Insert `\n` into long string such that each line has size no more than `length`.
@@ -65,7 +56,7 @@ def seed_all(seed=35, cudnn_benchmark=False, cudnn_deterministic=False):
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
-    if torch_available():
+    try:
         import torch
 
         torch.manual_seed(seed)
@@ -73,6 +64,8 @@ def seed_all(seed=35, cudnn_benchmark=False, cudnn_deterministic=False):
         torch.cuda.manual_seed_all(seed)  # if using multi-GPU
         torch.backends.cudnn.benchmark = cudnn_benchmark
         torch.backends.cudnn.deterministic = cudnn_deterministic
+    except ImportError:
+        pass
 
 
 def to_path(path: Union[str, Path]) -> Path:

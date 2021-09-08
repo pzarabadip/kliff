@@ -3,18 +3,12 @@ from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 import scipy.optimize
+import torch
 from loguru import logger
 
 from kliff import parallel
 from kliff.calculators.calculator import Calculator, _WrapperCalculator
 from kliff.error import report_import_error
-
-try:
-    import torch
-
-    torch_avail = True
-except ImportError:
-    torch_avail = False
 
 try:
     from mpi4py import MPI
@@ -630,9 +624,6 @@ class LossNeuralNetworkModel(object):
         residual_fn: Optional[Callable] = None,
         residual_data: Optional[Dict[str, Any]] = None,
     ):
-
-        if not torch_avail:
-            report_import_error("pytorch")
 
         default_residual_data = {
             "energy_weight": 1.0,
