@@ -687,7 +687,7 @@ class LossNeuralNetworkModel(object):
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.start_epoch = start_epoch
-
+        self.results = {}
         # model save metadata
         save_prefix = self.calculator.model.save_prefix
         save_start = self.calculator.model.save_start
@@ -732,6 +732,7 @@ class LossNeuralNetworkModel(object):
             # get the loss without any optimization if continue a training
             if self.start_epoch != 0 and epoch == self.start_epoch:
                 epoch_loss = self._get_loss_epoch(loader)
+                self.results[epoch] = epoch_loss
                 print("Epoch = {:<6d}  loss = {:.10e}".format(epoch, epoch_loss))
 
             else:
@@ -747,7 +748,8 @@ class LossNeuralNetworkModel(object):
                     loss = self.optimizer.step(closure)
                     # float() such that do not accumulate history, more memory friendly
                     epoch_loss += float(loss)
-
+                
+                self.results[epoch] = epoch_loss
                 print("Epoch = {:<6d}  loss = {:.10e}".format(epoch, epoch_loss))
                 if epoch >= save_start and (epoch - save_start) % save_frequency == 0:
                     path = os.path.join(save_prefix, "model_epoch{}.pkl".format(epoch))
@@ -756,11 +758,13 @@ class LossNeuralNetworkModel(object):
         # print loss from final parameter and save last epoch
         epoch += 1
         epoch_loss = self._get_loss_epoch(loader)
+        self.results[epoch] = epoch_loss
         print("Epoch = {:<6d}  loss = {:.10e}".format(epoch, epoch_loss))
         path = os.path.join(save_prefix, "model_epoch{}.pkl".format(epoch))
         self.calculator.model.save(path)
 
         logger.info(f"Finish minimization using optimization method: {self.method}.")
+        return self.results
 
     def _get_loss_epoch(self, loader):
         epoch_loss = 0
